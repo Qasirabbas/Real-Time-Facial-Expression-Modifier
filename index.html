@@ -1,0 +1,1283 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>表情管理大师</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Root Variables */
+        :root {
+            --primary-color: #00C853;
+            --background-dark: #15182B;
+            --panel-dark: #1B1E33;
+            --text-light: #ffffff;
+            --purple-button: #9C27B0;
+            --blue-button: #2196F3;
+            --red-button: #F44336;
+            --border-radius: 12px;
+        }
+
+        /* Base Styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+            background-color: var(--background-dark);
+            color: var(--text-light);
+            min-height: 100vh;
+            line-height: 1.5;
+            overflow-x: hidden;
+        }
+
+        /* Container */
+        .container {
+            max-width: 1440px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Header */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 0;
+            margin-bottom: 20px;
+        }
+
+        .logo img {
+            height: 32px;
+        }
+
+        .header-button {
+            background: var(--primary-color);
+            color: white;
+            padding: 8px 24px;
+            border-radius: 20px;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .header-button:hover {
+            background: #00B34A;
+        }
+
+        /* Mode Switcher */
+        .mode-switcher {
+            display: flex;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 4px;
+            border-radius: 24px;
+            width: fit-content;
+            margin: 0 auto 24px;
+        }
+
+        .mode-button {
+            padding: 10px 32px;
+            border: none;
+            background: none;
+            color: white;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .mode-button.active {
+            background: var(--primary-color);
+        }
+
+        /* Mode Content */
+        .mode-content {
+            display: none;
+        }
+
+        .mode-content.active {
+            display: block;
+        }
+
+        /* Preview Containers */
+        .preview-container {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 1;
+            background: var(--panel-dark);
+            border-radius: var(--border-radius);
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Upload Areas */
+        .upload-area {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            border: 2px dashed rgba(0, 200, 83, 0.3);
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            z-index: 2;
+        }
+
+        .upload-area:hover,
+        .upload-area.dragover {
+            border-color: var(--primary-color);
+            background: rgba(0, 200, 83, 0.1);
+        }
+
+        .upload-icon {
+            font-size: 48px;
+            color: var(--primary-color);
+            margin-bottom: 16px;
+        }
+
+        .upload-text {
+            color: var(--text-light);
+            font-size: 16px;
+            margin-bottom: 8px;
+            text-align: center;
+        }
+
+        .upload-subtext {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 14px;
+            text-align: center;
+        }
+
+        /* Preview Images */
+        .preview-image {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            max-width: 100%;
+            max-height: 100%;
+            display: none;
+            object-fit: contain;
+            z-index: 1;
+        }
+
+        /* Face Detection */
+        .face-overlay {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            z-index: 3;
+        }
+
+        .face-box {
+            position: absolute;
+            border: 2px solid var(--primary-color);
+            border-radius: 4px;
+            cursor: pointer;
+            pointer-events: auto;
+            transition: all 0.3s ease;
+        }
+
+        .face-box.selected {
+            border-color: #FFC107;
+        }
+
+        .face-label {
+            position: absolute;
+            top: -24px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--primary-color);
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            white-space: nowrap;
+        }
+
+        /* Manual Mode Layout */
+        .manual-mode .main-content {
+            display: grid;
+            grid-template-columns: 460px auto;
+            gap: 24px;
+            align-items: start;
+        }
+
+        /* Control Section */
+        .control-section {
+            background: var(--panel-dark);
+            border-radius: var(--border-radius);
+            padding: 24px;
+        }
+
+        /* Control Tabs */
+        .control-tabs {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 24px;
+            overflow-x: auto;
+            padding-bottom: 4px;
+        }
+
+        .control-tab {
+            padding: 8px 16px;
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            border-radius: 20px;
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            white-space: nowrap;
+            transition: all 0.3s ease;
+        }
+
+        .control-tab.active {
+            background: var(--primary-color);
+        }
+
+        /* Sliders */
+        .slider-group {
+            margin-bottom: 24px;
+        }
+
+        .slider-container {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 8px;
+        }
+
+        .slider-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 14px;
+        }
+
+        .slider-value {
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 2px;
+            -webkit-appearance: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            background: var(--primary-color);
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        /* Automatic Mode Layout */
+        .automatic-mode .main-content {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 24px;
+        }
+
+        .automatic-mode .result-container {
+            grid-column: span 2;
+        }
+
+        /* Action Buttons */
+        .action-buttons {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-top: 20px;
+        }
+
+        .action-button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            color: white;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .action-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .imitation-button {
+            background: var(--purple-button);
+        }
+
+        .imitation-button:hover:not(:disabled) {
+            background: #7B1FA2;
+        }
+
+        .animation-button {
+            background: var(--primary-color);
+        }
+
+        .animation-button:hover:not(:disabled) {
+            background: #00B34A;
+        }
+
+        .download-button {
+            background: var(--blue-button);
+        }
+
+        .download-button:hover:not(:disabled) {
+            background: #1976D2;
+        }
+
+        .reset-button {
+            background: var(--red-button);
+        }
+
+        .reset-button:hover:not(:disabled) {
+            background: #D32F2F;
+        }
+
+        /* Loading Indicator */
+        .loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            border-top-color: var(--primary-color);
+            animation: spin 1s linear infinite;
+            z-index: 4;
+            display: none;
+        }
+
+        @keyframes spin {
+            to {
+                transform: translate(-50%, -50%) rotate(360deg);
+            }
+        }
+
+        /* Notifications */
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 12px 24px;
+            border-radius: 8px;
+            background: var(--panel-dark);
+            color: var(--text-light);
+            font-size: 14px;
+            z-index: 1000;
+            opacity: 0;
+            transform: translateX(100%);
+            animation: slideIn 0.3s ease forwards;
+        }
+
+        .notification.success {
+            border-left: 4px solid var(--primary-color);
+        }
+
+        .notification.error {
+            border-left: 4px solid var(--red-button);
+        }
+
+        @keyframes slideIn {
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        /* Mobile Responsive Design */
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+
+            .manual-mode .main-content,
+            .automatic-mode .main-content {
+                grid-template-columns: 1fr;
+                gap: 16px;
+            }
+
+            .preview-container {
+                aspect-ratio: 4/3;
+            }
+
+            .control-section {
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                z-index: 100;
+                border-radius: 12px 12px 0 0;
+                max-height: 60vh;
+                overflow-y: auto;
+            }
+
+            .action-buttons {
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                background: var(--panel-dark);
+                padding: 16px;
+                margin: 0;
+                grid-template-columns: 1fr;
+                gap: 10px;
+                z-index: 99;
+            }
+
+            .action-button {
+                height: 48px;
+            }
+
+            body {
+                padding-bottom: 180px;
+            }
+
+            .mode-switcher {
+                width: calc(100% - 20px);
+                margin: 0 10px 20px;
+            }
+
+            .control-tabs {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                padding-bottom: 8px;
+            }
+
+            .control-tab {
+                flex-shrink: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="logo">
+                <img src="/expression/static/assets/caovan_web.svg" alt="Logo">
+            </div>
+            <button class="header-button" id="logoutButton">
+                <i class="fas fa-sign-out-alt"></i>
+                退出登录
+            </button>
+        </header>
+
+        <!-- Mode Switcher -->
+        <div class="mode-switcher">
+            <button class="mode-button active" data-mode="manual">手动调整</button>
+            <button class="mode-button" data-mode="automatic">自动模仿</button>
+        </div>
+
+        <!-- Manual Mode -->
+        <div class="manual-mode mode-content active">
+            <div class="main-content">
+                <!-- Preview Container -->
+                <div class="preview-container">
+                    <div class="upload-area" id="manualUploadArea">
+                        <i class="fas fa-cloud-upload-alt upload-icon"></i>
+                        <div class="upload-text">点击上传</div>
+                        <div class="upload-subtext">或将图片拖放至此处</div>
+                        <input type="file" id="manualImageUpload" hidden accept="image/*">
+                    </div>
+                    <div class="face-overlay" id="manualFaceOverlay"></div>
+                    <img id="manualPreview" class="preview-image" alt="Preview">
+                    <div id="manualLoading" class="loading"></div>
+                </div>
+
+                <!-- Controls Section -->
+                <div class="control-section">
+                    <div class="control-tabs">
+                        <button class="control-tab active" data-tab="head">
+                            <i class="fas fa-head-side"></i>
+                            头部
+                        </button>
+                        <button class="control-tab" data-tab="eyes">
+                            <i class="fas fa-eye"></i>
+                            眼睛
+                        </button>
+                        <button class="control-tab" data-tab="mouth">
+                            <i class="fas fa-smile"></i>
+                            嘴巴
+                        </button>
+                    </div>
+
+                    <!-- Head Controls -->
+                    <div class="slider-group" id="headControls">
+                        <div class="slider-container">
+                            <div class="slider-label">
+                                <span>抬头低头</span>
+                                <span class="slider-value" id="rotate_pitch_val">0</span>
+                            </div>
+                            <input type="range" id="rotate_pitch" min="-20" max="20" value="0" step="0.5">
+                        </div>
+                        <div class="slider-container">
+                            <div class="slider-label">
+                                <span>左转右转</span>
+                                <span class="slider-value" id="rotate_yaw_val">0</span>
+                            </div>
+                            <input type="range" id="rotate_yaw" min="-20" max="20" value="0" step="0.5">
+                        </div>
+                        <div class="slider-container">
+                            <div class="slider-label">
+                                <span>左偏右偏</span>
+                                <span class="slider-value" id="rotate_roll_val">0</span>
+                            </div>
+                            <input type="range" id="rotate_roll" min="-20" max="20" value="0" step="0.5">
+                        </div>
+                    </div>
+
+                    <!-- Eyes Controls -->
+                    <div class="slider-group" id="eyesControls" style="display: none;">
+                        <div class="slider-container">
+                            <div class="slider-label">
+                                <span>闭眼睁眼</span>
+                                <span class="slider-value" id="blink_val">0</span>
+                            </div>
+                            <input type="range" id="blink" min="-20" max="5" value="0" step="0.5">
+                        </div>
+                        <div class="slider-container">
+                            <div class="slider-label">
+                                <span>眉毛</span>
+                                <span class="slider-value" id="eyebrow_val">0</span>
+                            </div>
+                            <input type="range" id="eyebrow" min="-10" max="15" value="0" step="0.5">
+                        </div>
+                        <div class="slider-container">
+                            <div class="slider-label">
+                                <span>单眼眨眼</span>
+                                <span class="slider-value" id="wink_val">0</span>
+                            </div>
+                            <input type="range" id="wink" min="0" max="25" value="0" step="0.5">
+                        </div>
+                        <div class="slider-container">
+                            <div class="slider-label">
+                                <span>瞳孔左右</span>
+                                <span class="slider-value" id="pupil_x_val">0</span>
+                            </div>
+                            <input type="range" id="pupil_x" min="-15" max="15" value="0" step="0.5">
+                        </div>
+                        <div class="slider-container">
+                            <div class="slider-label">
+                                <span>瞳孔上下</span>
+                                <span class="slider-value" id="pupil_y_val">0</span>
+                            </div>
+                            <input type="range" id="pupil_y" min="-15" max="15" value="0" step="0.5">
+                        </div>
+                    </div>
+
+                    <!-- Mouth Controls -->
+                    <div class="slider-group" id="mouthControls" style="display: none;">
+                        <div class="slider-container">
+                            <div class="slider-label">
+                                <span>张嘴程度</span>
+                                <span class="slider-value" id="aaa_val">0</span>
+                            </div>
+                            <input type="range" id="aaa" min="-30" max="120" value="0" step="1">
+                        </div>
+                        <div class="slider-container">
+                            <div class="slider-label">
+                                <span>发e音</span>
+                                <span class="slider-value" id="eee_val">0</span>
+                            </div>
+                            <input type="range" id="eee" min="-20" max="15" value="0" step="0.2">
+                        </div>
+                        <div class="slider-container">
+                            <div class="slider-label">
+                                <span>发u音</span>
+                                <span class="slider-value" id="woo_val">0</span>
+                            </div>
+                            <input type="range" id="woo" min="-20" max="15" value="0" step="0.2">
+                        </div>
+                        <div class="slider-container">
+                            <div class="slider-label">
+                                <span>微笑程度</span>
+                                <span class="slider-value" id="smile_val">0</span>
+                            </div>
+                            <input type="range" id="smile" min="-0.3" max="1.3" value="0" step="0.01">
+                        </div>
+                    </div>
+
+                    <!-- Manual Mode Action Buttons -->
+                    <div class="action-buttons">
+                        <button class="action-button reset-button" id="resetButton">
+                            <i class="fas fa-undo"></i>
+                            重置
+                        </button>
+                        <button class="action-button animation-button" id="manualAnimationButton">
+                            <i class="fas fa-film"></i>
+                            生成动画
+                        </button>
+                        <button class="action-button download-button" id="manualDownloadButton">
+                            <i class="fas fa-download"></i>
+                            下载
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Automatic Mode -->
+        <div class="automatic-mode mode-content">
+            <div class="main-content">
+                <!-- Source Image Container -->
+                <div class="preview-container">
+                    <div class="upload-area" id="sourceUploadArea">
+                        <i class="fas fa-cloud-upload-alt upload-icon"></i>
+                        <div class="upload-text">上传原图</div>
+                        <div class="upload-subtext">或将图片拖放至此处</div>
+                        <input type="file" id="sourceImageUpload" hidden accept="image/*">
+                    </div>
+                    <div class="face-overlay" id="sourceFaceOverlay"></div>
+                    <img id="sourcePreview" class="preview-image" alt="Source Image">
+                    <div id="sourceLoading" class="loading"></div>
+                    <div class="preview-label">上传原图</div>
+                </div>
+
+                <!-- Reference Image Container -->
+                <div class="preview-container">
+                    <div class="upload-area" id="referenceUploadArea">
+                        <i class="fas fa-cloud-upload-alt upload-icon"></i>
+                        <div class="upload-text">上传参考图</div>
+                        <div class="upload-subtext">或将图片拖放至此处</div>
+                        <input type="file" id="referenceImageUpload" hidden accept="image/*">
+                    </div>
+                    <img id="referencePreview" class="preview-image" alt="Reference Image">
+                    <div id="referenceLoading" class="loading"></div>
+                    <div class="preview-label">上传参考图</div>
+                </div>
+
+                <!-- Result Container -->
+                <div class="preview-container result-container">
+                    <div id="resultPlaceholder" class="upload-area">
+                        <i class="fas fa-image upload-icon"></i>
+                        <div class="upload-text">生成效果图</div>
+                    </div>
+                    <img id="resultPreview" class="preview-image" alt="Result Image">
+                    <div id="resultLoading" class="loading"></div>
+                </div>
+
+                <!-- Automatic Mode Action Buttons -->
+                <div class="action-buttons">
+                    <button class="action-button imitation-button" id="startImitationButton" disabled>
+                        <i class="fas fa-magic"></i>
+                        一键模仿
+                    </button>
+                    <button class="action-button animation-button" id="autoAnimationButton" disabled>
+                        <i class="fas fa-film"></i>
+                        生成动画
+                    </button>
+                    <button class="action-button download-button" id="autoDownloadButton" disabled>
+                        <i class="fas fa-download"></i>
+                        下载
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript will be added separately -->
+    <script>
+        // State Management
+        const state = {
+            mode: 'manual',
+            imageId: null,
+            currentFaceIndex: 0,
+            isUploading: false,
+            sourceFile: null,
+            referenceFile: null,
+            manualFile: null,
+            lastMotionLink: null,
+            faceBoxes: {},
+            updateTimeout: null,
+            lastEditedImage: null
+        };
+
+        // DOM Elements
+        const dom = {
+            // Mode Switching
+            modeButtons: document.querySelectorAll('.mode-button'),
+            modeContents: document.querySelectorAll('.mode-content'),
+
+            // Manual Mode
+            manualUploadArea: document.getElementById('manualUploadArea'),
+            manualImageUpload: document.getElementById('manualImageUpload'),
+            manualPreview: document.getElementById('manualPreview'),
+            manualFaceOverlay: document.getElementById('manualFaceOverlay'),
+            manualLoading: document.getElementById('manualLoading'),
+            
+            // Control Elements
+            controlTabs: document.querySelectorAll('.control-tab'),
+            controlGroups: {
+                head: document.getElementById('headControls'),
+                eyes: document.getElementById('eyesControls'),
+                mouth: document.getElementById('mouthControls')
+            },
+            sliders: document.querySelectorAll('input[type="range"]'),
+
+            // Automatic Mode
+            sourceUploadArea: document.getElementById('sourceUploadArea'),
+            sourceImageUpload: document.getElementById('sourceImageUpload'),
+            sourcePreview: document.getElementById('sourcePreview'),
+            sourceFaceOverlay: document.getElementById('sourceFaceOverlay'),
+            sourceLoading: document.getElementById('sourceLoading'),
+
+            referenceUploadArea: document.getElementById('referenceUploadArea'),
+            referenceImageUpload: document.getElementById('referenceImageUpload'),
+            referencePreview: document.getElementById('referencePreview'),
+            referenceLoading: document.getElementById('referenceLoading'),
+
+            resultPlaceholder: document.getElementById('resultPlaceholder'),
+            resultPreview: document.getElementById('resultPreview'),
+            resultLoading: document.getElementById('resultLoading'),
+
+            // Action Buttons
+            resetButton: document.getElementById('resetButton'),
+            manualAnimationButton: document.getElementById('manualAnimationButton'),
+            manualDownloadButton: document.getElementById('manualDownloadButton'),
+            startImitationButton: document.getElementById('startImitationButton'),
+            autoAnimationButton: document.getElementById('autoAnimationButton'),
+            autoDownloadButton: document.getElementById('autoDownloadButton'),
+            logoutButton: document.getElementById('logoutButton')
+        };
+
+        // Utility Functions
+        function debounce(func, wait) {
+            let timeout;
+            return function(...args) {
+                clearTimeout(timeout);
+                timeout = setTimeout(() => func.apply(this, args), wait);
+            };
+        }
+
+        function showNotification(message, type = 'success') {
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.style.opacity = '0';
+                setTimeout(() => notification.remove(), 300);
+            }, 3000);
+        }
+
+        // Image Handling
+        async function handleImageUpload(file, uploadArea, fileInput, preview, overlay, loading) {
+            if (state.isUploading || !file.type.startsWith('image/')) {
+                showNotification('请上传图片文件', 'error');
+                return;
+            }
+
+            state.isUploading = true;
+            loading.style.display = 'block';
+
+            try {
+                // Create image for dimension calculation
+                const img = new Image();
+                const reader = new FileReader();
+
+                reader.onload = (e) => {
+                    img.src = e.target.result;
+                };
+
+                img.onload = async () => {
+                    // Calculate dimensions to fit container
+                    const container = preview.parentElement;
+                    const containerAspect = container.clientWidth / container.clientHeight;
+                    const imageAspect = img.width / img.height;
+                    
+                    let width, height;
+                    if (imageAspect > containerAspect) {
+                        width = container.clientWidth;
+                        height = width / imageAspect;
+                    } else {
+                        height = container.clientHeight;
+                        width = height * imageAspect;
+                    }
+
+                    preview.style.width = `${width}px`;
+                    preview.style.height = `${height}px`;
+                    preview.src = img.src;
+                    preview.style.display = 'block';
+
+                    // Hide upload area elements
+                    uploadArea.style.display = 'none';
+
+                    // Upload to server
+                    const formData = new FormData();
+                    formData.append('file', file);
+                    
+                    const response = await fetch('/expression/upload', {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    if (!response.ok) throw new Error('Upload failed');
+                    const data = await response.json();
+
+                    // Store file reference and update state
+                    if (uploadArea === dom.manualUploadArea) {
+                        state.manualFile = file;
+                        state.imageId = data.image_id;
+                        if (overlay) {
+                            const faces = await detectFaces(data.image_id);
+                            updateFaceBoxes(faces, overlay, preview);
+                        }
+                        dom.manualDownloadButton.disabled = false;
+                        dom.manualAnimationButton.disabled = false;
+                    } else if (uploadArea === dom.sourceUploadArea) {
+                        state.sourceFile = file;
+                        state.imageId = data.image_id;
+                        if (overlay) {
+                            const faces = await detectFaces(data.image_id);
+                            updateFaceBoxes(faces, overlay, preview);
+                        }
+                        updateAutomaticModeButtons();
+                    } else if (uploadArea === dom.referenceUploadArea) {
+                        state.referenceFile = file;
+                        updateAutomaticModeButtons();
+                    }
+
+                    showNotification('上传成功');
+                };
+
+                reader.readAsDataURL(file);
+            } catch (error) {
+                console.error('Upload error:', error);
+                showNotification('上传失败，请重试', 'error');
+            } finally {
+                state.isUploading = false;
+                loading.style.display = 'none';
+            }
+        }
+
+        // Face Detection
+        async function detectFaces(imageId) {
+            try {
+                const response = await fetch(`/expression/detect-faces/${imageId}`);
+                if (!response.ok) throw new Error('Face detection failed');
+                
+                const faces = await response.json();
+                state.faceBoxes[imageId] = faces;
+                return faces;
+            } catch (error) {
+                console.error('Face detection error:', error);
+                showNotification('人脸检测失败', 'error');
+                return [];
+            }
+        }
+
+        function updateFaceBoxes(faces, overlay, imageElement) {
+            overlay.innerHTML = '';
+            
+            const imageRect = imageElement.getBoundingClientRect();
+            const scaleX = imageRect.width / imageElement.naturalWidth;
+            const scaleY = imageRect.height / imageElement.naturalHeight;
+            
+            const offsetX = (imageElement.parentElement.clientWidth - imageRect.width) / 2;
+            const offsetY = (imageElement.parentElement.clientHeight - imageRect.height) / 2;
+            
+            faces.forEach((face, index) => {
+                const box = document.createElement('div');
+                box.className = `face-box${index === state.currentFaceIndex ? ' selected' : ''}`;
+                
+                const left = face[0] * scaleX + offsetX;
+                const top = face[1] * scaleY + offsetY;
+                const width = (face[2] - face[0]) * scaleX;
+                const height = (face[3] - face[1]) * scaleY;
+                
+                box.style.left = `${left}px`;
+                box.style.top = `${top}px`;
+                box.style.width = `${width}px`;
+                box.style.height = `${height}px`;
+                
+                const label = document.createElement('div');
+                label.className = 'face-label';
+                label.textContent = `Face ${index + 1}`;
+                box.appendChild(label);
+                
+                box.addEventListener('click', () => selectFace(index));
+                overlay.appendChild(box);
+            });
+        }
+
+        // Face Selection and Controls
+        async function selectFace(index) {
+            state.currentFaceIndex = index;
+            
+            document.querySelectorAll('.face-box').forEach((box, i) => {
+                box.classList.toggle('selected', i === index);
+            });
+
+            try {
+                const response = await fetch(`/expression/get-face-state/${state.imageId}/${index}`);
+                if (!response.ok) throw new Error('Failed to get face state');
+                
+                const faceState = await response.json();
+                updateSliders(faceState);
+            } catch (error) {
+                console.error('Error loading face state:', error);
+                showNotification('加载面部状态失败', 'error');
+            }
+        }
+
+        // Manual Mode Controls
+        const updateManualImage = debounce(async () => {
+            if (!state.imageId) return;
+
+            dom.manualLoading.style.display = 'block';
+            const formData = new FormData();
+            formData.append('image_id', state.imageId);
+            formData.append('face_index', state.currentFaceIndex);
+            
+            dom.sliders.forEach(slider => {
+                formData.append(slider.id, slider.value);
+            });
+
+            try {
+                const response = await fetch('/expression/edit', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) throw new Error('Edit failed');
+                const blob = await response.blob();
+                dom.manualPreview.src = URL.createObjectURL(blob);
+                state.lastEditedImage = blob;
+            } catch (error) {
+                console.error('Update error:', error);
+                showNotification('更新失败，请重试', 'error');
+            } finally {
+                dom.manualLoading.style.display = 'none';
+            }
+        }, 100);
+
+        // Auto Mode Controls
+        async function startImitation() {
+            if (!state.sourceFile || !state.referenceFile) {
+                showNotification('请先上传原图和参考图', 'error');
+                return;
+            }
+
+            dom.resultLoading.style.display = 'block';
+            dom.startImitationButton.disabled = true;
+
+            try {
+                const formData = new FormData();
+                formData.append('source_image', state.sourceFile);
+                formData.append('sample_image', state.referenceFile);
+                formData.append('face_index', state.currentFaceIndex);
+
+                const response = await fetch('/expression/process-imitation', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) throw new Error('Imitation failed');
+
+                const blob = await response.blob();
+                dom.resultPreview.src = URL.createObjectURL(blob);
+                dom.resultPreview.style.display = 'block';
+                dom.resultPlaceholder.style.display = 'none';
+                dom.autoDownloadButton.disabled = false;
+                
+                state.lastEditedImage = blob;
+                state.lastMotionLink = await response.json();
+
+                showNotification('模仿成功');
+            } catch (error) {
+                console.error('Imitation error:', error);
+                showNotification('模仿失败，请重试', 'error');
+            } finally {
+                dom.resultLoading.style.display = 'none';
+                dom.startImitationButton.disabled = false;
+            }
+        }
+
+        // Animation Generation
+        async function createAnimation(isManualMode = false) {
+            const loading = isManualMode ? dom.manualLoading : dom.resultLoading;
+            const button = isManualMode ? dom.manualAnimationButton : dom.autoAnimationButton;
+            const preview = isManualMode ? dom.manualPreview : dom.resultPreview;
+            
+            loading.style.display = 'block';
+            button.disabled = true;
+
+            try {
+                const response = await fetch('/expression/create-gif', {
+                    method: 'POST'
+                });
+
+                if (!response.ok) throw new Error('Animation failed');
+
+                const blob = await response.blob();
+                preview.src = URL.createObjectURL(blob);
+                preview.style.display = 'block';
+                
+                if (!isManualMode) {
+                    dom.resultPlaceholder.style.display = 'none';
+                    dom.autoDownloadButton.disabled = false;
+                }
+                
+                state.lastEditedImage = blob;
+                showNotification('动画生成成功');
+            } catch (error) {
+                console.error('Animation error:', error);
+                showNotification('动画生成失败，请重试', 'error');
+            } finally {
+                loading.style.display = 'none';
+                button.disabled = false;
+            }
+        }
+
+        // Download Function
+        function downloadImage(isManualMode = false) {
+            if (!state.lastEditedImage) {
+                showNotification('没有可下载的图片', 'error');
+                return;
+            }
+
+            const url = URL.createObjectURL(state.lastEditedImage);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `expression_${Date.now()}.${state.lastEditedImage.type.includes('gif') ? 'gif' : 'png'}`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+            
+            showNotification('下载成功');
+        }
+
+        // Reset Function
+        async function resetFace() {
+            if (!state.imageId) return;
+            
+            dom.manualLoading.style.display = 'block';
+            
+            try {
+                const formData = new FormData();
+                formData.append('image_id', state.imageId);
+                formData.append('face_index', state.currentFaceIndex);
+                
+                const response = await fetch('/expression/reset-face', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (!response.ok) throw new Error('Reset failed');
+                
+                dom.sliders.forEach(slider => {
+                    slider.value = 0;
+                    document.getElementById(`${slider.id}_val`).textContent = '0';
+                });
+                
+                const blob = await response.blob();
+                dom.manualPreview.src = URL.createObjectURL(blob);
+                state.lastEditedImage = blob;
+                
+                showNotification('重置成功');
+            } catch (error) {
+                console.error('Reset error:', error);
+                showNotification('重置失败，请重试', 'error');
+            } finally {
+                dom.manualLoading.style.display = 'none';
+            }
+        }
+
+        // Initialize Everything
+        function init() {
+            // Mode Switching
+            dom.modeButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const mode = button.dataset.mode;
+                    state.mode = mode;
+                    
+                    // Update buttons
+                    dom.modeButtons.forEach(btn => btn.classList.remove('active'));
+                    button.classList.add('active');
+                    
+                    // Update content
+                    dom.modeContents.forEach(content => {
+                        content.style.display = content.classList.contains(`${mode}-mode`) ? 'block' : 'none';
+                    });
+                });
+            });
+
+            // Control Tabs
+            dom.controlTabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    const targetGroup = tab.dataset.tab;
+                    
+                    dom.controlTabs.forEach(t => t.classList.remove('active'));
+                    tab.classList.add('active');
+            
+                    // Show/hide control groups
+                    Object.values(dom.controlGroups).forEach(group => {
+                        group.style.display = 'none';
+                    });
+                    dom.controlGroups[targetGroup].style.display = 'block';
+                });
+            });
+
+            // Slider Controls
+            dom.sliders.forEach(slider => {
+                const valueDisplay = document.getElementById(`${slider.id}_val`);
+                slider.addEventListener('input', () => {
+                    valueDisplay.textContent = slider.value;
+                    updateManualImage();
+                });
+            });
+
+            // Setup Upload Areas
+            function setupUploadArea(uploadArea, fileInput, preview, overlay, loading) {
+                const dragEvents = ['dragenter', 'dragover', 'dragleave', 'drop'];
+                
+                dragEvents.forEach(event => {
+                    uploadArea.addEventListener(event, (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                    });
+                });
+
+                uploadArea.addEventListener('dragenter', () => uploadArea.classList.add('dragover'));
+                uploadArea.addEventListener('dragleave', () => uploadArea.classList.remove('dragover'));
+                
+                uploadArea.addEventListener('drop', async (e) => {
+                    uploadArea.classList.remove('dragover');
+                    const file = e.dataTransfer.files[0];
+                    if (file) await handleImageUpload(file, uploadArea, fileInput, preview, overlay, loading);
+                });
+
+                uploadArea.addEventListener('click', () => {
+                    if (!state.isUploading) fileInput.click();
+                });
+
+                fileInput.addEventListener('change', async (e) => {
+                    const file = e.target.files[0];
+                    if (file) await handleImageUpload(file, uploadArea, fileInput, preview, overlay, loading);
+                });
+            }
+
+            // Setup all upload areas
+            setupUploadArea(
+                dom.manualUploadArea,
+                dom.manualImageUpload,
+                dom.manualPreview,
+                dom.manualFaceOverlay,
+                dom.manualLoading
+            );
+            
+            setupUploadArea(
+                dom.sourceUploadArea,
+                dom.sourceImageUpload,
+                dom.sourcePreview,
+                dom.sourceFaceOverlay,
+                dom.sourceLoading
+            );
+            
+            setupUploadArea(
+                dom.referenceUploadArea,
+                dom.referenceImageUpload,
+                dom.referencePreview,
+                null,
+                dom.referenceLoading
+            );
+
+            // Button Event Listeners
+            dom.resetButton.addEventListener('click', resetFace);
+            dom.manualAnimationButton.addEventListener('click', () => createAnimation(true));
+            dom.manualDownloadButton.addEventListener('click', () => downloadImage(true));
+            
+            dom.startImitationButton.addEventListener('click', startImitation);
+            dom.autoAnimationButton.addEventListener('click', () => createAnimation(false));
+            dom.autoDownloadButton.addEventListener('click', () => downloadImage(false));
+            
+            // Logout Handler
+            dom.logoutButton.addEventListener('click', async () => {
+                try {
+                    const response = await fetch('/api/logout', {
+                        method: 'POST',
+                        credentials: 'include'
+                    });
+                    
+                    if (response.ok) {
+                        window.location.href = '/login';
+                    } else {
+                        throw new Error('Logout failed');
+                    }
+                } catch (error) {
+                    console.error('Logout error:', error);
+                    showNotification('退出登录失败，请重试', 'error');
+                }
+            });
+
+            // Window Resize Handler
+            let resizeTimeout;
+            window.addEventListener('resize', () => {
+                clearTimeout(resizeTimeout);
+                resizeTimeout = setTimeout(() => {
+                    if (state.imageId) {
+                        const faces = state.faceBoxes[state.imageId];
+                        if (faces) {
+                            if (state.mode === 'manual') {
+                                updateFaceBoxes(faces, dom.manualFaceOverlay, dom.manualPreview);
+                            } else {
+                                updateFaceBoxes(faces, dom.sourceFaceOverlay, dom.sourcePreview);
+                            }
+                        }
+                    }
+                }, 200);
+            });
+
+            // Update Automatic Mode Buttons
+            function updateAutomaticModeButtons() {
+                const hasSourceAndReference = state.sourceFile && state.referenceFile;
+                dom.startImitationButton.disabled = !hasSourceAndReference;
+                dom.autoAnimationButton.disabled = !hasSourceAndReference;
+                dom.autoDownloadButton.disabled = !dom.resultPreview.src;
+            }
+
+            // Cleanup on page unload
+            window.addEventListener('beforeunload', () => {
+                if (state.imageId) {
+                    fetch(`/expression/delete/${state.imageId}`, { method: 'DELETE' })
+                        .catch(error => console.error('Cleanup error:', error));
+                }
+            });
+        }
+
+        // Start the application
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
