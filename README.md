@@ -66,7 +66,7 @@ safetensors>=0.3.0
 
 ### 1. Clone the Repository
 ```bash
-git clone https://github.com/yourusername/advanced-live-portrait.git
+git clone https://github.com/Qasirabbas/Real-Time-Expression-Modifier.git
 cd advanced-live-portrait
 ```
 
